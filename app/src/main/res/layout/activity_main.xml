@@ -10,9 +10,12 @@
             <EditText android:id="@+id/youtubeKey" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="YouTube Data API v3 key" android:singleLine="true" android:inputType="textPassword" android:textColor="#FFFFFF" android:textColorHint="#888899" />
             <EditText android:id="@+id/tiktokRelay" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="TikTok relay URL (WebSocket or HTTP)" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
             <EditText android:id="@+id/tiktokUsername" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="TikTok username" android:singleLine="true" android:text="vrtualmilitia" android:textColor="#FFFFFF" android:textColorHint="#888899" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="ALERT OUTPUTS" android:textColor="#00E5FF" android:textStyle="bold" />
+            <CheckBox android:id="@+id/ttsToggle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="Speak Chat via TTS" android:textColor="#FFFFFF" android:buttonTint="#00E5FF" />
+            <CheckBox android:id="@+id/headsUpToggle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="Show Heads-Up Chat Notifications" android:textColor="#FFFFFF" android:buttonTint="#00E5FF" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal" android:gravity="center_vertical">
                 <Button android:id="@+id/startServiceButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Start Background Service" />
-                <Button android:id="@+id/testTtsButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Test TTS &amp; Notification" />
+                <Button android:id="@+id/testTtsButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Test Alerts" />
             </LinearLayout>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="HORIZON SHELL RESET MANAGER" android:textColor="#00E5FF" android:textStyle="bold" />
             <RadioGroup android:id="@+id/resetModeGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
@@ -26,8 +29,15 @@
             </LinearLayout>
             <TextView android:id="@+id/shellStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Shell reset mode: Off" android:textColor="#B8B8C8" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="WRIST DASHBOARD" android:textColor="#00E5FF" android:textStyle="bold" />
-            <EditText android:id="@+id/chatPopoutUrl" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Chat pop-out URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
-            <EditText android:id="@+id/streamPreviewUrl" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Muted stream preview URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Checked = pane ON. Both ON = 50/50 split, one ON = full width." android:textColor="#B8B8C8" android:textSize="12sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <CheckBox android:id="@+id/chatUrlToggle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="On" android:textColor="#FFFFFF" android:buttonTint="#00E5FF" />
+                <EditText android:id="@+id/chatPopoutUrl" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Chat pop-out URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <CheckBox android:id="@+id/previewUrlToggle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="On" android:textColor="#FFFFFF" android:buttonTint="#00E5FF" />
+                <EditText android:id="@+id/streamPreviewUrl" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Muted stream preview URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            </LinearLayout>
             <Button android:id="@+id/openDashboardButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Open Wrist Split Dashboard" />
         </LinearLayout>
     </ScrollView>
