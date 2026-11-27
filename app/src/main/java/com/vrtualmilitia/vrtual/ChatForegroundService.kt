@@ -15,6 +15,7 @@ import okhttp3.*
 import org.json.JSONObject
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -26,6 +27,8 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
     private var focusRequest: AudioFocusRequest? = null
     private var twitchSocket: WebSocket? = null
     private var lastYoutubeMessage = ""
+    private val headsUpCounter = AtomicInteger(0)
+    private val twitchNameRegex = Regex("display-name=([^;\\s]*)")
 
     override fun onCreate() {
         super.onCreate()
@@ -72,6 +75,11 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
         return START_STICKY
     }
 
+    /** Alert toggles are read live from the same SharedPreferences file MainActivity writes to. */
+    private fun alertPrefs() = getSharedPreferences(ShellResetManager.PREFS, MODE_PRIVATE)
+    private fun ttsEnabled() = alertPrefs().getBoolean(KEY_TTS_ENABLED, true)
+    private fun headsUpEnabled() = alertPrefs().getBoolean(KEY_HEADS_UP_ENABLED, true)
+
     private fun connectTwitch(channelInput: String) {
         twitchSocket?.close(1000, "reconnect")
         val channel = channelInput.trim().removePrefix("#").lowercase().ifBlank { "vrtualmilitia" }
@@ -84,9 +92,16 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
                 webSocket.send("JOIN #$channel")
             }
             override fun onMessage(webSocket: WebSocket, text: String) {
-                if (text.startsWith("PING")) { webSocket.send(text.replace("PING", "PONG")); return }
-                val message = text.substringAfter(" PRIVMSG ", "").substringAfter(" :", "").trim()
-                if (message.isNotBlank() && !message.startsWith("/")) speak(message)
+                // One websocket frame can carry several IRC lines; handle each chat message on its own.
+                for (line in text.split("\r\n", "\n")) {
+                    if (line.isBlank()) continue
+                    if (line.startsWith("PING")) { webSocket.send(line.replace("PING", "PONG")); continue }
+                    if (!line.contains(" PRIVMSG ")) continue
+                    val message = line.substringAfter(" PRIVMSG ", "").substringAfter(" :", "").trim()
+                    if (message.isBlank() || message.startsWith("/")) continue
+                    val author = twitchNameRegex.find(line)?.groupValues?.get(1)
+                    onChatMessage("Twitch", author, message, message)
+                }
             }
         })
     }
@@ -113,7 +128,7 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
                     val author = item.optJSONObject("authorDetails")?.optString("displayName", "Viewer") ?: "Viewer"
                     val msg = snippet?.optString("displayMessage", "") ?: ""
                     val id = item.optString("id")
-                    if (msg.isNotBlank() && id != lastYoutubeMessage) { lastYoutubeMessage = id; speak("$author says $msg") }
+                    if (msg.isNotBlank() && id != lastYoutubeMessage) { lastYoutubeMessage = id; onChatMessage("YouTube", author, msg, "$author says $msg") }
                 }
                 pageToken = json.optString("nextPageToken", pageToken)
                 delay(json.optLong("pollingIntervalMillis", 5000L).coerceIn(1000L, 30000L))
@@ -141,8 +156,8 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
             val json = JSONObject(text)
             val message = json.optString("message", json.optString("text", ""))
             val user = json.optString("username", "TikTok viewer")
-            if (message.isNotBlank()) speak("$user says $message")
-        } catch (_: Exception) { if (text.isNotBlank()) speak(text) }
+            if (message.isNotBlank()) onChatMessage("TikTok", user, message, "$user says $message")
+        } catch (_: Exception) { if (text.isNotBlank()) onChatMessage("TikTok", null, text.trim(), text) }
     }
 
     private fun getJson(url: String): JSONObject {
@@ -150,7 +165,44 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
         client.newCall(request).execute().use { response -> if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}"); return JSONObject(response.body?.string().orEmpty()) }
     }
 
+    /**
+     * Single entry point for every live chat message (Twitch, YouTube, TikTok).
+     * The heads-up banner and the spoken TTS are gated independently by their own toggles.
+     */
+    private fun onChatMessage(platform: String, author: String?, message: String, spoken: String) {
+        if (message.isBlank()) return
+        showHeadsUp(platform, author, message)
+        speak(spoken)
+    }
+
+    /**
+     * Posts a silent, high-priority banner. Each message uses its own rotating ID (2000..2019) so Quest 3
+     * shows a fresh floating banner every time instead of silently updating one notification.
+     */
+    private fun showHeadsUp(platform: String, author: String?, message: String) {
+        if (!headsUpEnabled()) return
+        val manager = getSystemService(NotificationManager::class.java) ?: return
+        val title = if (author.isNullOrBlank()) "$platform chat" else "$platform: $author"
+        val body = message.take(300)
+        val notification = NotificationCompat.Builder(this, HEADS_UP_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setSound(null)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(false)
+            .setTimeoutAfter(HEADS_UP_TIMEOUT_MS)
+            .setWhen(System.currentTimeMillis())
+            .build()
+        val id = HEADS_UP_BASE_ID + ((headsUpCounter.getAndIncrement() and 0x7FFFFFFF) % HEADS_UP_SLOTS)
+        try { manager.notify(id, notification) } catch (_: Exception) { }
+    }
+
     private fun speak(text: String) {
+        if (!ttsEnabled()) return
         if (!ttsReady || text.isBlank()) return
         val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
         if (Build.VERSION.SDK_INT >= 26) {
@@ -174,7 +226,19 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
     }
 
     private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= 26) getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(CHANNEL_ID, "VRTUAL Chat Relay", NotificationManager.IMPORTANCE_HIGH))
+        if (Build.VERSION.SDK_INT >= 26) {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "VRTUAL Chat Relay", NotificationManager.IMPORTANCE_HIGH))
+            // Separate silent channel for per-message banners: IMPORTANCE_HIGH shows the floating banner, no sound so it never chimes over TTS.
+            val headsUpChannel = NotificationChannel(HEADS_UP_CHANNEL_ID, "VRTUAL Chat Heads-Up", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Silent floating banners for incoming live chat messages"
+                setSound(null, null)
+                enableVibration(false)
+                enableLights(false)
+                setShowBadge(false)
+            }
+            manager.createNotificationChannel(headsUpChannel)
+        }
     }
     private fun notification(message: String): Notification = NotificationCompat.Builder(this, CHANNEL_ID)
         .setSmallIcon(android.R.drawable.ic_btn_speak_now).setContentTitle("V.R.T.U.A.L. Chat Relay").setContentText(message)
@@ -186,5 +250,17 @@ class ChatForegroundService : Service(), TextToSpeech.OnInitListener {
     companion object {
         const val PREFS = "vrtual_settings"; const val CHANNEL_ID = "vrtual_chat"; const val NOTIFICATION_ID = 4201
         const val ACTION_STOP = "com.vrtualmilitia.vrtual.STOP"; const val ACTION_TEST = "com.vrtualmilitia.vrtual.TEST"
+
+        // Toggle keys shared with MainActivity (all default to ON).
+        const val KEY_TTS_ENABLED = "ttsEnabled"
+        const val KEY_HEADS_UP_ENABLED = "headsUpEnabled"
+        const val KEY_CHAT_URL_ENABLED = "chatUrlEnabled"
+        const val KEY_PREVIEW_URL_ENABLED = "previewUrlEnabled"
+
+        // Heads-up banners: silent channel + rotating IDs 2000..2019.
+        const val HEADS_UP_CHANNEL_ID = "vrtual_chat_headsup"
+        const val HEADS_UP_BASE_ID = 2000
+        const val HEADS_UP_SLOTS = 20
+        const val HEADS_UP_TIMEOUT_MS = 10_000L
     }
 }
