@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/rootFrame" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#101018">
+    <ScrollView android:id="@+id/settingsScroll" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+            <TextView android:id="@+id/titleText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="V.R.T.U.A.L.  //  QUEST CONTROL" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Live chat relay • Horizon shell tools • Wrist dashboard" android:textColor="#B8B8C8" android:textSize="14sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="CHAT RELAY" android:textColor="#00E5FF" android:textStyle="bold" />
+            <EditText android:id="@+id/twitchChannel" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Twitch channel (vrtualmilitia)" android:singleLine="true" android:text="vrtualmilitia" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <EditText android:id="@+id/youtubeVideo" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="YouTube Live Video ID or URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <EditText android:id="@+id/youtubeKey" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="YouTube Data API v3 key" android:singleLine="true" android:inputType="textPassword" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <EditText android:id="@+id/tiktokRelay" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="TikTok relay URL (WebSocket or HTTP)" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <EditText android:id="@+id/tiktokUsername" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="TikTok username" android:singleLine="true" android:text="vrtualmilitia" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <Button android:id="@+id/startServiceButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Start Background Service" />
+                <Button android:id="@+id/testTtsButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="Test TTS &amp; Notification" />
+            </LinearLayout>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="HORIZON SHELL RESET MANAGER" android:textColor="#00E5FF" android:textStyle="bold" />
+            <RadioGroup android:id="@+id/resetModeGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <RadioButton android:id="@+id/modeOff" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Off" android:textColor="#FFFFFF" />
+                <RadioButton android:id="@+id/modeManual" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Manual Only" android:textColor="#FFFFFF" />
+                <RadioButton android:id="@+id/modeAuto" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto-Run on Startup" android:textColor="#FFFFFF" />
+            </RadioGroup>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/grantShizukuButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Grant Silent Shell (Shizuku)" />
+                <Button android:id="@+id/resetShellButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="Reset Horizon Shell Now" />
+            </LinearLayout>
+            <TextView android:id="@+id/shellStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Shell reset mode: Off" android:textColor="#B8B8C8" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="WRIST DASHBOARD" android:textColor="#00E5FF" android:textStyle="bold" />
+            <EditText android:id="@+id/chatPopoutUrl" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Chat pop-out URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <EditText android:id="@+id/streamPreviewUrl" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Muted stream preview URL" android:singleLine="true" android:textColor="#FFFFFF" android:textColorHint="#888899" />
+            <Button android:id="@+id/openDashboardButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Open Wrist Split Dashboard" />
+        </LinearLayout>
+    </ScrollView>
+    <FrameLayout android:id="@+id/dashboardContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#000000" android:visibility="gone" />
+</FrameLayout>
